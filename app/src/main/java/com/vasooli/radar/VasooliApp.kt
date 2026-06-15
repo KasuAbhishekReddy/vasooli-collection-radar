@@ -17,7 +17,10 @@ class VasooliApp : Application() {
     override fun onCreate() {
         super.onCreate()
         val db = AppDatabase.get(this)
-        repository = Repository(db.retailerDao(), db.ledgerDao())
-        appScope.launch { repository.seedIfEmpty() }
+        repository = Repository(db.retailerDao(), db.ledgerDao(), db.usageDao())
+        appScope.launch {
+            repository.seedIfEmpty()
+            repository.recordOpenToday()
+        }
     }
 }

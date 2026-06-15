@@ -1,8 +1,6 @@
 package com.vasooli.radar.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -38,32 +36,15 @@ private val LightColors = lightColorScheme(
     onError = Color.White
 )
 
-private val DarkColors = darkColorScheme(
-    primary = Color(0xFF2DD4A7),
-    onPrimary = Color(0xFF003828),
-    primaryContainer = Color(0xFF065F46),
-    onPrimaryContainer = Color(0xFFCFF5E9),
-    secondary = Color(0xFFFF8A7E),
-    onSecondary = Color(0xFF5A140E),
-    background = Color(0xFF14130F),       // warm near-black
-    onBackground = Color(0xFFF2EEE6),
-    surface = Color(0xFF1E1C17),
-    onSurface = Color(0xFFF2EEE6),
-    surfaceVariant = Color(0xFF2A2820),
-    onSurfaceVariant = Color(0xFFB0A99C),
-    outline = Color(0xFF3A3730),
-    outlineVariant = Color(0xFF2A2820),
-    error = Color(0xFFFF8A7E),
-    onError = Color(0xFF5A140E)
-)
-
+/**
+ * One fixed look everywhere — the light/cream "playful" scheme.
+ * Deliberately ignores the phone's dark-mode setting so the app always
+ * looks identical to the demo video.
+ */
 @Composable
-fun VasooliTheme(
-    useDark: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
-) {
+fun VasooliTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = if (useDark) DarkColors else LightColors,
+        colorScheme = LightColors,
         typography = AppTypography,
         content = content
     )

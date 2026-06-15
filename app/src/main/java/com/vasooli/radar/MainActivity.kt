@@ -2,11 +2,14 @@ package com.vasooli.radar
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import android.graphics.Color
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Store
+import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -25,11 +28,13 @@ import com.vasooli.radar.ui.screens.AddRetailerScreen
 import com.vasooli.radar.ui.screens.DashboardScreen
 import com.vasooli.radar.ui.screens.DetailScreen
 import com.vasooli.radar.ui.screens.RetailersScreen
+import com.vasooli.radar.ui.screens.UsageScreen
 import com.vasooli.radar.ui.theme.VasooliTheme
 
 object Routes {
     const val DASHBOARD = "dashboard"
     const val RETAILERS = "retailers"
+    const val USAGE = "usage"
     const val ADD_RETAILER = "add_retailer"
     fun editRetailer(id: Long) = "edit_retailer/$id"
     fun detail(id: Long) = "detail/$id"
@@ -39,7 +44,10 @@ object Routes {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        )
         val repo = (application as VasooliApp).repository
         setContent {
             VasooliTheme {
@@ -56,6 +64,7 @@ fun AppRoot(vm: AppViewModel) {
     NavHost(navController = nav, startDestination = Routes.DASHBOARD) {
         composable(Routes.DASHBOARD) { DashboardScreen(vm, nav) }
         composable(Routes.RETAILERS) { RetailersScreen(vm, nav) }
+        composable(Routes.USAGE) { UsageScreen(vm, nav) }
         composable(Routes.ADD_RETAILER) { AddRetailerScreen(vm, nav) }
         composable("edit_retailer/{id}") { entry ->
             AddRetailerScreen(vm, nav, entry.arguments?.getString("id")?.toLongOrNull())
@@ -95,6 +104,16 @@ fun BottomBar(nav: NavController, current: String) {
             },
             icon = { Icon(Icons.Filled.Store, contentDescription = null) },
             label = { Text("Retailers") }
+        )
+        NavigationBarItem(
+            selected = current == Routes.USAGE,
+            onClick = {
+                if (current != Routes.USAGE) nav.navigate(Routes.USAGE) {
+                    popUpTo(Routes.DASHBOARD); launchSingleTop = true
+                }
+            },
+            icon = { Icon(Icons.Filled.Whatshot, contentDescription = null) },
+            label = { Text("Usage") }
         )
     }
 }

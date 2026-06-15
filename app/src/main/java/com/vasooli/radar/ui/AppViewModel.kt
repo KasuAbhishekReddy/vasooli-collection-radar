@@ -31,6 +31,16 @@ data class DashboardState(
     val chase: List<RetailerHealth> = emptyList()
 )
 
+data class DayCell(val label: String, val used: Boolean)
+
+data class UsageStats(
+    val streak: Int = 0,
+    val last7: Int = 0,
+    val last14: Int = 0,
+    val total: Int = 0,
+    val grid: List<DayCell> = emptyList()
+)
+
 class AppViewModel(private val repo: Repository) : ViewModel() {
 
     val health: StateFlow<List<RetailerHealth>> =
@@ -58,6 +68,10 @@ class AppViewModel(private val repo: Repository) : ViewModel() {
                 .sortedByDescending { it.risk.expectedLoss }
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardState())
+
+    val usageStats: StateFlow<UsageStats> = repo.usageDays
+        .map { computeUsage(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UsageStats())
 
     fun ledgerFor(id: Long) = repo.ledgerFor(id)
 
@@ -96,4 +110,37 @@ class AppViewModel(private val repo: Repository) : ViewModel() {
     companion object {
         fun factory(repo: Repository) = viewModelFactory { initializer { AppViewModel(repo) } }
     }
+}
+
+/** Most-recent-first list of the last [n] calendar-day keys ("yyyy-MM-dd"). */
+private fun lastNDayKeys(n: Int): List<String> {
+    val fmt = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+    val cal = java.util.Calendar.getInstance()
+    val out = ArrayList<String>(n)
+    repeat(n) {
+        out.add(fmt.format(cal.time))
+        cal.add(java.util.Calendar.DAY_OF_YEAR, -1)
+    }
+    return out
+}
+
+private fun computeUsage(days: List<String>): UsageStats {
+    val used = days.toHashSet()
+    val window = lastNDayKeys(90) // index 0 = today
+    val last7 = window.take(7).count { it in used }
+    val last14 = window.take(14).count { it in used }
+
+    var streak = 0
+    val start = when {
+        window.isNotEmpty() && window[0] in used -> 0          // counts from today
+        window.size > 1 && window[1] in used -> 1               // or from yesterday
+        else -> -1
+    }
+    if (start >= 0) {
+        var i = start
+        while (i < window.size && window[i] in used) { streak++; i++ }
+    }
+
+    val grid = window.take(14).reversed().map { key -> DayCell(key.takeLast(2), key in used) }
+    return UsageStats(streak = streak, last7 = last7, last14 = last14, total = used.size, grid = grid)
 }

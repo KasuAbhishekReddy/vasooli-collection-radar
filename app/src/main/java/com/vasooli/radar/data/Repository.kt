@@ -2,10 +2,18 @@ package com.vasooli.radar.data
 
 class Repository(
     private val retailerDao: RetailerDao,
-    private val ledgerDao: LedgerDao
+    private val ledgerDao: LedgerDao,
+    private val usageDao: UsageDao
 ) {
     val retailers = retailerDao.observeAll()
     val ledger = ledgerDao.observeAll()
+    val usageDays = usageDao.observeDays()
+
+    /** Record that the app was opened today (idempotent per calendar day). */
+    suspend fun recordOpenToday() {
+        val key = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+        usageDao.record(UsageDay(key))
+    }
 
     fun retailer(id: Long) = retailerDao.observe(id)
     fun ledgerFor(id: Long) = ledgerDao.observeFor(id)
