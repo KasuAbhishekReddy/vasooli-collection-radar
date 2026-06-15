@@ -34,7 +34,8 @@ data class DashboardState(
 data class DayCell(val label: String, val used: Boolean)
 
 data class UsageStats(
-    val streak: Int = 0,
+    val streak: Int = 0,     // current streak, all-time (uncapped)
+    val longest: Int = 0,    // best streak ever
     val last7: Int = 0,
     val last14: Int = 0,
     val total: Int = 0,
@@ -124,23 +125,53 @@ private fun lastNDayKeys(n: Int): List<String> {
     return out
 }
 
+/** Shift a "yyyy-MM-dd" key by [delta] days (handles month/year/DST boundaries). */
+private fun shiftDay(key: String, delta: Int): String {
+    val fmt = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+    val parsed = fmt.parse(key) ?: return key
+    val cal = java.util.Calendar.getInstance()
+    cal.time = parsed
+    cal.add(java.util.Calendar.DAY_OF_YEAR, delta)
+    return fmt.format(cal.time)
+}
+
 private fun computeUsage(days: List<String>): UsageStats {
     val used = days.toHashSet()
-    val window = lastNDayKeys(90) // index 0 = today
-    val last7 = window.take(7).count { it in used }
-    val last14 = window.take(14).count { it in used }
+    val total = used.size
 
-    var streak = 0
-    val start = when {
-        window.isNotEmpty() && window[0] in used -> 0          // counts from today
-        window.size > 1 && window[1] in used -> 1               // or from yesterday
-        else -> -1
+    // Rolling windows (the "5+ days/week" evidence) + the visual calendar.
+    val recent = lastNDayKeys(14) // index 0 = today
+    val last7 = recent.take(7).count { it in used }
+    val last14 = recent.count { it in used }
+
+    // CURRENT streak — all-time, uncapped. Counts from today, or from yesterday
+    // if today hasn't been opened yet (a streak only breaks after a full missed day).
+    val todayKey = recent.firstOrNull() ?: ""
+    var cursor: String? = when {
+        todayKey in used -> todayKey
+        shiftDay(todayKey, -1) in used -> shiftDay(todayKey, -1)
+        else -> null
     }
-    if (start >= 0) {
-        var i = start
-        while (i < window.size && window[i] in used) { streak++; i++ }
+    var current = 0
+    while (cursor != null && cursor in used) {
+        current++
+        cursor = shiftDay(cursor, -1)
     }
 
-    val grid = window.take(14).reversed().map { key -> DayCell(key.takeLast(2), key in used) }
-    return UsageStats(streak = streak, last7 = last7, last14 = last14, total = used.size, grid = grid)
+    // LONGEST streak — all-time best run of consecutive days.
+    var longest = 0
+    for (d in used) {
+        if (shiftDay(d, -1) !in used) {          // d starts a run
+            var len = 1
+            var next = shiftDay(d, 1)
+            while (next in used) { len++; next = shiftDay(next, 1) }
+            if (len > longest) longest = len
+        }
+    }
+
+    val grid = recent.reversed().map { key -> DayCell(key.takeLast(2), key in used) }
+    return UsageStats(
+        streak = current, longest = longest, last7 = last7, last14 = last14,
+        total = total, grid = grid
+    )
 }

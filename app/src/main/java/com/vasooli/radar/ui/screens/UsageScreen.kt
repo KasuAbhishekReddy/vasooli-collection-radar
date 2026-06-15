@@ -93,6 +93,12 @@ private fun StreakHero(s: UsageStats) {
                 color = Color.White.copy(alpha = 0.85f),
                 style = MaterialTheme.typography.bodyMedium
             )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Best: ${s.longest} ${if (s.longest == 1) "day" else "days"}   ·   ${s.total} days total (all time)",
+                color = Color.White.copy(alpha = 0.85f),
+                style = MaterialTheme.typography.labelMedium
+            )
         }
     }
 }
