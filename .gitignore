@@ -1,0 +1,17 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+*.apk
+
+# build output (relocated outside repo) + reference docs + demo media
+build/
+/ondc_paper.pdf
+/ondc_paper.txt
+*.mp4
